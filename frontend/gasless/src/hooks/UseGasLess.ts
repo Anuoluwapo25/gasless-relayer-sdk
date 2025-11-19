@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import type { Signer } from 'ethers';
-import { GaslessSDK } from '../sdk/Gasless';
-import type { RelayerConfig, RelayResponse } from '../sdk/Gasless';
+import { GaslessSDK, ContractEncoder } from 'gasless-relayer-sdk';
 
 export function useGasless(config: RelayerConfig) {
   const [isRelaying, setIsRelaying] = useState(false);

@@ -304,17 +304,12 @@
 #         return tx_hash.hex()
 
 
-# relayer/services.py
 import os
 import time
 from web3 import Web3
 from dotenv import load_dotenv
 from eth_account import Account
-# from eth_account.messages import (
-#     encode_typed_data,
-#     encode_structured_data,
-# )
-from eth_account import encode_typed_data
+from eth_account.messages import encode_typed_data 
 
 encode_eip712 = encode_typed_data if 'encode_typed_data' in globals() else encode_structured_data
 
@@ -323,9 +318,9 @@ load_dotenv()
 
 class RelayerService:
     def __init__(self):
-        infura_url = os.getenv('INFURA_URL')
+        infura_url = os.getenv('RPC_URL')
         if not infura_url:
-            raise ValueError("INFURA_URL not set in .env")
+            raise ValueError("RPC_URL not set in .env")
         
         self.w3 = Web3(Web3.HTTPProvider(infura_url))
         if not self.w3.is_connected():

@@ -1,0 +1,37 @@
+{
+  "name": "gasless-relayer-sdk",
+  "version": "1.0.3",
+  "description": "Meta-transaction SDK for gasless Ethereum transactions using EIP-712 signatures",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "ethers": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Anuoluwapo25/gasless-relayer-sdk.git"
+  },
+  "keywords": [
+    "gasless",
+    "relayer",
+    "ethereum",
+    "meta-transaction"
+  ],
+  "author": "annie25",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Anuoluwapo25/gasless-relayer-sdk/issues"
+  },
+  "homepage": "https://github.com/Anuoluwapo25/gasless-relayer-sdk#readme"
+}
