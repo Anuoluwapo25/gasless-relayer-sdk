@@ -1,41 +1,82 @@
 import { useState, useCallback } from 'react';
-import type { Signer } from 'ethers';
+import { ethers } from 'ethers';
 import { GaslessSDK, ContractEncoder } from 'gasless-relayer-sdk';
 
-export function useGasless(config: RelayerConfig) {
+export const useGasless = () => {
+  const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
+  const [signer, setSigner] = useState<ethers.Signer | null>(null);
+  const [sdk, setSdk] = useState<GaslessSDK | null>(null);
   const [isRelaying, setIsRelaying] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [txHash, setTxHash] = useState<string | null>(null);
+  const [txHash, setTxHash] = useState<string>('');
+  const [error, setError] = useState<string>('');
 
-  const relay = useCallback(async (
-    signer: Signer,
+  const initialize = useCallback((newProvider: ethers.BrowserProvider, newSigner: ethers.Signer) => {
+    setProvider(newProvider);
+    setSigner(newSigner);
+
+    const gaslessSDK = new GaslessSDK(newProvider, {
+      relayerUrl: 'http://127.0.0.1:8000/api',
+      forwarderAddress: '0xA7ab9c7f337574C8560f715085a53c62b275EfBf',
+      chainId: 11155111,
+    });
+
+    setSdk(gaslessSDK);
+  }, []);
+
+  const disconnect = useCallback(() => {
+    setProvider(null);
+    setSigner(null);
+    setSdk(null);
+    setTxHash('');
+    setError('');
+  }, []);
+
+  const sendTransaction = useCallback(async (
     targetContract: string,
     functionData: string,
-    gasLimit?: number
-  ): Promise<RelayResponse> => {
-    setIsRelaying(true);
-    setError(null);
-    setTxHash(null);
-    
-    try {
-      const provider = signer.provider;
-      if (!provider) throw new Error('No provider');
-      
-      const sdk = new GaslessSDK(provider, config);
-      const result = await sdk.relay(signer, targetContract, functionData, gasLimit);
-      setTxHash(result.txHash);
-      await sdk.waitForTransaction(result.txHash);
-      return result;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      setError(message);
-      throw err;
-    } finally {
-      setIsRelaying(false);
+    gasLimit: number = 150000
+  ) => {
+    if (!sdk || !signer) {
+      setError('Wallet not connected');
+      return null;
     }
-  }, [config]);
 
-  const clearError = useCallback(() => setError(null), []);
+    setIsRelaying(true);
+    setError('');
+    setTxHash('');
 
-  return { relay, isRelaying, error, txHash, clearError };
-}
+    try {
+      const result = await sdk.relay(
+        signer,
+        targetContract,
+        functionData,
+        gasLimit
+      );
+
+      setTxHash(result.txHash);
+
+      // Wait for confirmation
+      await sdk.waitForTransaction(result.txHash);
+
+      setIsRelaying(false);
+      return result;
+    } catch (err: any) {
+      console.error('Transaction error:', err);
+      setError(err.message || 'Transaction failed');
+      setIsRelaying(false);
+      return null;
+    }
+  }, [sdk, signer]);
+
+  return {
+    provider,
+    signer,
+    sdk,
+    isRelaying,
+    txHash,
+    error,
+    initialize,
+    disconnect,
+    sendTransaction,
+  };
+};

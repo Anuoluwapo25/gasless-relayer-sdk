@@ -1,6 +1,6 @@
 {
   "name": "gasless-relayer-sdk",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Meta-transaction SDK for gasless Ethereum transactions using EIP-712 signatures",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

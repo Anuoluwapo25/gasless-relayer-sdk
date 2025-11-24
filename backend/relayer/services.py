@@ -309,7 +309,9 @@ import time
 from web3 import Web3
 from dotenv import load_dotenv
 from eth_account import Account
-from eth_account.messages import encode_typed_data 
+from eth_account.messages import encode_typed_data
+
+
 
 encode_eip712 = encode_typed_data if 'encode_typed_data' in globals() else encode_structured_data
 
@@ -318,11 +320,11 @@ load_dotenv()
 
 class RelayerService:
     def __init__(self):
-        infura_url = os.getenv('RPC_URL')
-        if not infura_url:
+        alchemy_url = os.getenv('RPC_URL')
+        if not alchemy_url:
             raise ValueError("RPC_URL not set in .env")
         
-        self.w3 = Web3(Web3.HTTPProvider(infura_url))
+        self.w3 = Web3(Web3.HTTPProvider(alchemy_url))
         if not self.w3.is_connected():
             raise ValueError("Failed to connect to Web3 provider")
 
@@ -356,56 +358,99 @@ class RelayerService:
         self._nonce_cache[address] += 1
         return nonce
 
-    def verify_signature(self, request: dict, signature: str) -> bool:
+
+
+    # def verify_signature(self, forward_request: dict, signature: str) -> bool:
+    #     try:
+    #         message = {
+    #             "types": {
+    #                 "EIP712Domain": [...],  # same as above
+    #                 "ForwardRequest": [...],
+    #             },
+    #             "primaryType": "ForwardRequest",
+    #             "domain": {
+    #                 "name": "TrustedForwarder",
+    #                 "version": "1",
+    #                 "chainId": self.w3.eth.chain_id,
+    #                 "verifyingContract": "0xA7ab9c7f337574C8560f715085a53c62b275EfBf",
+    #             },
+    #             "message": forward_request
+    #         }
+
+    #         # Force-clean domain
+    #         domain_clean = {k: v for k, v in message["domain"].items() if k != "types"}
+
+    #         encoded = encode_typed_data(
+    #             domain=domain_clean,
+    #             message_types=message["types"],
+    #             message_data=message["message"]
+    #         )
+
+    #         signer = Account.recover_message(encoded, signature=signature)
+    #         return signer.lower() == forward_request["from"].lower()
+
+    #     except Exception as e:
+    #         print("Sig verify error:", e)
+    #         return False
+    def verify_signature(self, forward_request: dict, signature: str) -> bool:
         try:
-            # EIP-712 domain
-            domain = {
-                "name": "TrustedForwarder",
-                "version": "1",
-                "chainId": self.chain_id,
-                "verifyingContract": self.forwarder_address,
-            }
-
-            # EIP-712 types (include EIP712Domain for full encoding)
-            types = {
-                "EIP712Domain": [
-                    {"name": "name", "type": "string"},
-                    {"name": "version", "type": "string"},
-                    {"name": "chainId", "type": "uint256"},
-                    {"name": "verifyingContract", "type": "address"},
-                ],
-                "ForwardRequest": [
-                    {"name": "from", "type": "address"},
-                    {"name": "to", "type": "address"},
-                    {"name": "value", "type": "uint256"},
-                    {"name": "gas", "type": "uint256"},
-                    {"name": "nonce", "type": "uint256"},
-                    {"name": "deadline", "type": "uint48"},
-                    {"name": "data", "type": "bytes"},
-                ],
-            }
-
-            # Convert string values to ints for numeric fields
-            message = {
-                "from": request['from'],
-                "to": request['to'],
-                "value": int(request['value']),
-                "gas": int(request['gas']),
-                "nonce": int(request['nonce']),
-                "deadline": int(request['deadline']),
-                "data": request['data'],
-            }
-
-            # Encode using the new import
-            encoded_message = encode_typed_data(domain=domain, message_types=types, message=message)
+            from eth_account.messages import encode_typed_data
+            from eth_account import Account
             
-            # Recover the signer
-            recovered_signer = Account.recover_message(encoded_message, signature=signature)
-            return recovered_signer.lower() == request['from'].lower()
+            # Ensure all numeric values are integers, not strings
+            message = {
+                "from": forward_request["from"],
+                "to": forward_request["to"],
+                "value": int(forward_request["value"]),
+                "gas": int(forward_request["gas"]),
+                "nonce": int(forward_request["nonce"]),
+                "deadline": int(forward_request["deadline"]),
+                "data": forward_request["data"]
+            }
+            
+            full_message = {
+                "types": {
+                    "EIP712Domain": [
+                        {"name": "name", "type": "string"},
+                        {"name": "version", "type": "string"},
+                        {"name": "chainId", "type": "uint256"},
+                        {"name": "verifyingContract", "type": "address"}
+                    ],
+                    "ForwardRequest": [
+                        {"name": "from", "type": "address"},
+                        {"name": "to", "type": "address"},
+                        {"name": "value", "type": "uint256"},
+                        {"name": "gas", "type": "uint256"},
+                        {"name": "nonce", "type": "uint256"},
+                        {"name": 'deadline', "type": "uint256"},
+                        {"name": "data", "type": "bytes"}
+                    ]
+                },
+                "primaryType": "ForwardRequest",
+                "domain": {
+                    "name": "TrustedForwarder",
+                    "version": "1",
+                    "chainId": 11155111,
+                    "verifyingContract": "0xA7ab9c7f337574C8560f715085a53c62b275EfBf"
+                },
+                "message": message
+            }
+            
+            print("Verifying with message:", message)
+            
+            signable_message = encode_typed_data(full_message=full_message)
+            recovered = Account.recover_message(signable_message, signature=signature)
+            
+            print(f"Recovered address: {recovered}")
+            print(f"Expected address: {forward_request['from']}")
+            
+            return recovered.lower() == forward_request["from"].lower()
+            
         except Exception as e:
-            print(f"Signature verification failed: {e}")
+            print("Signature verification failed:", e)
+            import traceback
+            traceback.print_exc()
             return False
-
     def relay_transaction(self, request: dict, signature: str) -> str:
         # Minimal ABI for the forwarder contract's `execute` function
         forwarder_abi = [

@@ -7,7 +7,10 @@ export class GaslessSDK {
 
   constructor(provider: Provider, config: RelayerConfig) {
     this.provider = provider;
-    this.config = config;
+    this.config = {
+      ...config,
+      relayerUrl: config.relayerUrl.replace(/\/$/, ''),
+    }; 
   }
 
   /**
@@ -49,7 +52,7 @@ export class GaslessSDK {
         { name: 'value', type: 'uint256' },
         { name: 'gas', type: 'uint256' },
         { name: 'nonce', type: 'uint256' },
-        { name: 'deadline', type: 'uint48' },
+        { name: 'deadline', type: 'uint256' },
         { name: 'data', type: 'bytes' },
       ],
     };
@@ -65,7 +68,22 @@ export class GaslessSDK {
     const domain = this.getDomain();
     const types = this.getTypes();
     
-    return await signer.signTypedData(domain, types, request);
+    // Convert string values to BigInt for signing
+    const messageToSign = {
+      from: request.from,
+      to: request.to,
+      value: BigInt(request.value),
+      gas: BigInt(request.gas),
+      nonce: BigInt(request.nonce),
+      deadline: BigInt(request.deadline),
+      data: request.data,
+    };
+    
+    console.log('Signing with domain:', domain);
+    console.log('Signing with types:', types);
+    console.log('Signing message:', messageToSign);
+    
+    return await signer.signTypedData(domain, types, messageToSign);
   }
 
   /**
@@ -78,7 +96,10 @@ export class GaslessSDK {
     gasLimit: number = 150000,
     deadlineOffset: number = 3600 // 1 hour
   ): Promise<RelayResponse> {
-    const signerAddress = await signer.getAddress();
+    // const signerAddress = await signer.getAddress();
+
+   const signerAddress = await signer.getAddress();
+    
     
     // Get nonce from relayer
     const nonce = await this.getNonce(signerAddress);
@@ -95,11 +116,15 @@ export class GaslessSDK {
       data: functionData,
     };
 
-    // Sign the request
+    console.log('Forward request:', request);
+
+    // Sign the request (converts to BigInt internally)
     const signature = await this.signForwardRequest(signer, request);
 
-    // Send to relayer
-    const response = await fetch(`${this.config.relayerUrl}/relay`, {
+    console.log('Generated signature:', signature);
+
+    // Send to relayer (with string values)
+    const response = await fetch(`${this.config.relayerUrl}/relay/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
