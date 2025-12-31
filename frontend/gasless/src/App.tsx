@@ -5,6 +5,8 @@ import { GaslessSDK, ContractEncoder } from 'gasless-relayer-sdk';
 import { Zap, Code, Rocket, Shield, CheckCircle, Copy, ExternalLink, Terminal, Book, PlayCircle, Sparkles, Keyboard, Layers } from 'lucide-react';
 import { appConfig } from './config';
 
+const SET_MESSAGE_ABI = ['function setMessage(string message)'];
+
 const GaslessSDKLanding = () => {
   const [activeTab, setActiveTab] = useState<string>('overview');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -34,7 +36,12 @@ const sdk = new GaslessSDK(provider, {
 });
 
 // Send gasless transaction
-const functionData = ContractEncoder.encodeSetMessage('Hello!');
+const setMessageAbi = ["function setMessage(string message)"];
+const functionData = ContractEncoder.encodeFunction(
+  setMessageAbi,
+  'setMessage',
+  ['Hello!']
+);
 const result = await sdk.relay(
   signer,
   '${appConfig.targetContract}',
@@ -44,7 +51,7 @@ const result = await sdk.relay(
 console.log('Transaction:', result.txHash);`;
 
   const hookExampleCode = `import { useGasless } from './hooks/useGasless';
-import { ContractEncoder } from './utils/contracts';
+  import { ContractEncoder } from './utils/contracts';
 
 function MyComponent() {
   const { relay, isRelaying, error, txHash } = useGasless({
@@ -57,7 +64,12 @@ function MyComponent() {
     const provider = new ethers.BrowserProvider(window.ethereum);
     const signer = await provider.getSigner();
     
-    const data = ContractEncoder.encodeSetMessage('Hello!');
+    const setMessageAbi = ["function setMessage(string message)"];
+    const data = ContractEncoder.encodeFunction(
+      setMessageAbi,
+      'setMessage',
+      ['Hello!']
+    );
     await relay(signer, TARGET_CONTRACT, data);
   };
 
@@ -134,7 +146,11 @@ function MyComponent() {
       });
 
       setDemoStatus('Encoding contract call...');
-      const functionData = ContractEncoder.encodeSetMessage(demoMessage);
+      const functionData = ContractEncoder.encodeFunction(
+        SET_MESSAGE_ABI,
+        'setMessage',
+        [demoMessage]
+      );
 
       setDemoStatus('Signing meta-transaction...');
       const result = await sdk.relay(
@@ -499,16 +515,9 @@ function MyComponent() {
                     <h5 className="text-lg font-semibold text-white mb-3">ContractEncoder</h5>
                     <div className="space-y-4 text-sm">
                       <div>
-                        <code className="text-pink-400">encodeSetMessage(message: string)</code>
-                        <p className="text-purple-300 mt-2">Encode setMessage function call</p>
-                      </div>
-                      <div>
-                        <code className="text-pink-400">encodeIncrementCounter()</code>
-                        <p className="text-purple-300 mt-2">Encode incrementCounter function call</p>
-                      </div>
-                      <div>
-                        <code className="text-pink-400">encode(abi, functionName, params)</code>
-                        <p className="text-purple-300 mt-2">Generic encoder for any function</p>
+                        <code className="text-pink-400">encodeFunction(abi, functionName, params)</code>
+                        <p className="text-purple-300 mt-2">Generic encoder for any function call.</p>
+                        <p className="text-purple-300 mt-2">Example: encodeFunction(["function setMessage(string message)"], "setMessage", [message])</p>
                       </div>
                     </div>
                   </div>
