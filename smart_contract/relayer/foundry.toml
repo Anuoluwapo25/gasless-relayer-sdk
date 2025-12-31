@@ -9,5 +9,10 @@ remappings = [
     "@openzeppelin/=lib/openzeppelin-contracts/"
 ]
 
+[rpc_endpoints]
+blockdag = "${BLOCKDAG_RPC_URL}"
+
+[profile.default.networks.blockdag]
+chain_id = 1043
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
