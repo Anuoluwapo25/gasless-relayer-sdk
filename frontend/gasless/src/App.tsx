@@ -3,6 +3,7 @@ import type { BrowserProvider, Signer } from 'ethers';
 import { ethers } from 'ethers';
 import { GaslessSDK, ContractEncoder } from 'gasless-relayer-sdk';
 import { Zap, Code, Rocket, Shield, CheckCircle, Copy, ExternalLink, Terminal, Book, PlayCircle, Sparkles, Keyboard, Layers } from 'lucide-react';
+import { appConfig } from './config';
 
 const GaslessSDKLanding = () => {
   const [activeTab, setActiveTab] = useState<string>('overview');
@@ -27,16 +28,16 @@ const provider = new ethers.BrowserProvider(window.ethereum);
 const signer = await provider.getSigner();
 
 const sdk = new GaslessSDK(provider, {
-  relayerUrl: '${window.location.origin}/api',
-  forwarderAddress: '0xA7ab9c7f337574C8560f715085a53c62b275EfBf',
-  chainId: 11155111 // Sepolia
+  relayerUrl: '${appConfig.relayerUrl}',
+  forwarderAddress: '${appConfig.forwarderAddress}',
+  chainId: ${appConfig.chainId}
 });
 
 // Send gasless transaction
 const functionData = ContractEncoder.encodeSetMessage('Hello!');
 const result = await sdk.relay(
   signer,
-  '0x4687Bd0255892f305267487C1aFD5ff5b41354a3',
+  '${appConfig.targetContract}',
   functionData
 );
 
@@ -47,9 +48,9 @@ import { ContractEncoder } from './utils/contracts';
 
 function MyComponent() {
   const { relay, isRelaying, error, txHash } = useGasless({
-    relayerUrl: '${window.location.origin}/api',
-    forwarderAddress: '0xA7ab9c7f337574C8560f715085a53c62b275EfBf',
-    chainId: 11155111
+    relayerUrl: '${appConfig.relayerUrl}',
+    forwarderAddress: '${appConfig.forwarderAddress}',
+    chainId: ${appConfig.chainId}
   });
 
   const handleSend = async () => {
@@ -127,9 +128,9 @@ function MyComponent() {
       const signer = await provider.getSigner();
 
       const sdk = new GaslessSDK(provider as BrowserProvider, {
-        relayerUrl: `${window.location.origin}/api`,
-        forwarderAddress: '0xA7ab9c7f337574C8560f715085a53c62b275EfBf',
-        chainId: 11155111,
+        relayerUrl: appConfig.relayerUrl,
+        forwarderAddress: appConfig.forwarderAddress,
+        chainId: appConfig.chainId,
       });
 
       setDemoStatus('Encoding contract call...');
@@ -138,7 +139,7 @@ function MyComponent() {
       setDemoStatus('Signing meta-transaction...');
       const result = await sdk.relay(
         signer as Signer,
-        '0x4687Bd0255892f305267487C1aFD5ff5b41354a3',
+        appConfig.targetContract,
         functionData
       );
 
@@ -196,7 +197,7 @@ function MyComponent() {
         <div className="max-w-7xl mx-auto text-center">
           <div className="inline-flex items-center space-x-2 bg-purple-500/10 border border-purple-500/20 rounded-full px-4 py-2 mb-8">
             <CheckCircle className="w-4 h-4 text-green-400" />
-            <span className="text-sm text-purple-300">Live on Sepolia Testnet</span>
+            <span className="text-sm text-purple-300">Live on {appConfig.chainName}</span>
           </div>
           
           <h2 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
@@ -241,7 +242,7 @@ function MyComponent() {
             action: 'Open Docs'
           }, {
             title: 'Try the Playground',
-            body: 'Send a gasless tx on Sepolia with your wallet and see the status in real time.',
+            body: `Send a gasless tx on ${appConfig.chainName} with your wallet and see the status in real time.`,
             href: '#playground',
             icon: <Terminal className="w-5 h-5" />,
             action: 'Open Playground'
@@ -575,7 +576,7 @@ function MyComponent() {
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 text-yellow-100 text-sm">
                   <p className="font-semibold mb-1">Tip</p>
-                  <p>Use a Sepolia faucet for fresh test ETH, then relay without the user paying gas.</p>
+                  <p>Fund your relayer on {appConfig.chainName} once; users can still transact without holding the native token.</p>
                 </div>
                 <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4 text-purple-100 text-sm">
                   <p className="font-semibold mb-1">Docs</p>
@@ -596,27 +597,27 @@ function MyComponent() {
             <div className="grid md:grid-cols-2 gap-4">
               <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4">
                 <p className="text-purple-300 text-sm mb-1">Relayer URL</p>
-                <code className="text-white text-sm break-all">{window.location.origin}/api</code>
+                  <code className="text-white text-sm break-all">{appConfig.relayerUrl}</code>
               </div>
               <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4">
                 <p className="text-purple-300 text-sm mb-1">Chain ID</p>
-                <code className="text-white text-sm">11155111 (Sepolia)</code>
+                  <code className="text-white text-sm">{appConfig.chainId} ({appConfig.chainName})</code>
               </div>
               <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4">
                 <p className="text-purple-300 text-sm mb-1">Forwarder</p>
-                <code className="text-white text-xs break-all">0xA7ab9c7f337574C8560f715085a53c62b275EfBf</code>
+                  <code className="text-white text-xs break-all">{appConfig.forwarderAddress}</code>
               </div>
               <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4">
                 <p className="text-purple-300 text-sm mb-1">Target Contract</p>
-                <code className="text-white text-xs break-all">0x4687Bd0255892f305267487C1aFD5ff5b41354a3</code>
+                  <code className="text-white text-xs break-all">{appConfig.targetContract}</code>
               </div>
             </div>
 
             <div className="bg-black/30 border border-purple-500/20 rounded-lg p-4 text-sm text-purple-100 space-y-2">
               <p className="font-semibold text-white">Relayer flow checklist</p>
               <ul className="list-disc list-inside space-y-1">
-                <li>Backend env: set RELAYER_PRIVATE_KEY, RPC_URL (Sepolia), and allowed forwarder.</li>
-                <li>Deploy forwarder & target; update addresses above.</li>
+                <li>Backend env: set relayer key, RPC URL for {appConfig.chainName}, and allow the forwarder address.</li>
+                <li>Deploy forwarder & target on {appConfig.chainName}; update addresses above.</li>
                 <li>Front-end: call <code className="text-pink-300">ContractEncoder</code> to build calldata, then <code className="text-pink-300">sdk.relay</code>.</li>
                 <li>Monitor with <code className="text-pink-300">sdk.waitForTransaction</code> for UX feedback.</li>
               </ul>

@@ -1,19 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { Wallet, AlertCircle, CheckCircle, RefreshCw } from 'lucide-react';
-
-const SEPOLIA_CHAIN_ID = '0xaa36a7'; // 11155111 in hex
-const SEPOLIA_PARAMS = {
-  chainId: SEPOLIA_CHAIN_ID,
-  chainName: 'Sepolia Testnet',
-  nativeCurrency: {
-    name: 'SepoliaETH',
-    symbol: 'ETH',
-    decimals: 18
-  },
-  rpcUrls: ['https://rpc.sepolia.org'],
-  blockExplorerUrls: ['https://sepolia.etherscan.io']
-};
+import { appConfig } from '../config';
 
 type WalletConnectProps = {
   onConnect?: (provider: ethers.BrowserProvider, signer: ethers.Signer) => void;
@@ -58,7 +46,7 @@ export const WalletConnect = ({ onConnect, onDisconnect }: WalletConnectProps) =
         setAccount(address);
         setChainId(network.chainId.toString());
         
-        if (network.chainId.toString() === '11155111') {
+        if (network.chainId === BigInt(appConfig.chainId)) {
           onConnect?.(provider, signer);
         }
       }
@@ -81,11 +69,11 @@ export const WalletConnect = ({ onConnect, onDisconnect }: WalletConnectProps) =
     window.location.reload();
   };
 
-  const switchToSepolia = async () => {
+  const switchToConfigured = async () => {
     try {
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
-        params: [{ chainId: SEPOLIA_CHAIN_ID }],
+        params: [{ chainId: appConfig.chainHex }],
       });
       return true;
     } catch (switchError) {
@@ -94,11 +82,17 @@ export const WalletConnect = ({ onConnect, onDisconnect }: WalletConnectProps) =
         try {
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
-            params: [SEPOLIA_PARAMS],
+            params: [{
+              chainId: appConfig.chainHex,
+              chainName: appConfig.chainName,
+              nativeCurrency: appConfig.nativeCurrency,
+              rpcUrls: [appConfig.rpcUrl],
+              blockExplorerUrls: [appConfig.explorerUrl],
+            }],
           });
           return true;
         } catch (addError) {
-          console.error('Failed to add Sepolia network:', addError);
+          console.error('Failed to add configured network:', addError);
           throw addError;
         }
       }
@@ -122,16 +116,16 @@ export const WalletConnect = ({ onConnect, onDisconnect }: WalletConnectProps) =
       const signer = await provider.getSigner();
       const network = await provider.getNetwork();
 
-      // Check if we're on Sepolia, if not, switch
-      if (network.chainId.toString() !== '11155111') {
-        await switchToSepolia();
+      // Check if we're on the configured chain, if not, switch
+      if (network.chainId !== BigInt(appConfig.chainId)) {
+        await switchToConfigured();
         // Reload provider after network switch
         const newProvider = new ethers.BrowserProvider(window.ethereum);
         const newSigner = await newProvider.getSigner();
         const address = await newSigner.getAddress();
         
         setAccount(address);
-        setChainId('11155111');
+        setChainId(appConfig.chainId.toString());
         onConnect?.(newProvider, newSigner);
       } else {
         const address = await signer.getAddress();
@@ -160,7 +154,7 @@ export const WalletConnect = ({ onConnect, onDisconnect }: WalletConnectProps) =
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-  const isCorrectNetwork = chainId === '11155111';
+  const isCorrectNetwork = chainId === appConfig.chainId.toString();
 
   if (account) {
     return (
@@ -170,10 +164,10 @@ export const WalletConnect = ({ onConnect, onDisconnect }: WalletConnectProps) =
             <AlertCircle className="w-4 h-4 text-yellow-400" />
             <span className="text-sm text-yellow-200">Wrong Network</span>
             <button
-              onClick={switchToSepolia}
+              onClick={switchToConfigured}
               className="ml-2 px-3 py-1 bg-yellow-600 hover:bg-yellow-700 text-white text-xs rounded transition-colors"
             >
-              Switch to Sepolia
+              Switch Network
             </button>
           </div>
         )}
@@ -181,7 +175,7 @@ export const WalletConnect = ({ onConnect, onDisconnect }: WalletConnectProps) =
         {isCorrectNetwork && (
           <div className="flex items-center space-x-2 bg-green-500/10 border border-green-500/30 rounded-lg px-3 py-2">
             <CheckCircle className="w-4 h-4 text-green-400" />
-            <span className="text-sm text-green-200">Sepolia</span>
+            <span className="text-sm text-green-200">{appConfig.chainName}</span>
           </div>
         )}
 

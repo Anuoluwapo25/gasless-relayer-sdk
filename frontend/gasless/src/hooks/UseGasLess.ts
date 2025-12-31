@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { ethers } from 'ethers';
 import { GaslessSDK } from 'gasless-relayer-sdk';
+import { appConfig } from '../config';
 
 export const useGasless = () => {
   const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
@@ -15,9 +16,9 @@ export const useGasless = () => {
     setSigner(newSigner);
 
     const gaslessSDK = new GaslessSDK(newProvider, {
-      relayerUrl: 'http://127.0.0.1:8000/api',
-      forwarderAddress: '0xA7ab9c7f337574C8560f715085a53c62b275EfBf',
-      chainId: 11155111,
+      relayerUrl: appConfig.relayerUrl,
+      forwarderAddress: appConfig.forwarderAddress,
+      chainId: appConfig.chainId,
     });
 
     setSdk(gaslessSDK);
