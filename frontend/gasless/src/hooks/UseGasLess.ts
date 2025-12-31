@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { ethers } from 'ethers';
-import { GaslessSDK, ContractEncoder } from 'gasless-relayer-sdk';
+import { GaslessSDK } from 'gasless-relayer-sdk';
 
 export const useGasless = () => {
   const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);

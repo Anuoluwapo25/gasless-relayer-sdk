@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { Wallet, AlertCircle, CheckCircle, RefreshCw } from 'lucide-react';
 
@@ -15,11 +15,16 @@ const SEPOLIA_PARAMS = {
   blockExplorerUrls: ['https://sepolia.etherscan.io']
 };
 
-export const WalletConnect = ({ onConnect, onDisconnect }) => {
-  const [account, setAccount] = useState(null);
-  const [chainId, setChainId] = useState(null);
+type WalletConnectProps = {
+  onConnect?: (provider: ethers.BrowserProvider, signer: ethers.Signer) => void;
+  onDisconnect?: () => void;
+};
+
+export const WalletConnect = ({ onConnect, onDisconnect }: WalletConnectProps) => {
+  const [account, setAccount] = useState<string | null>(null);
+  const [chainId, setChainId] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Check if already connected
   useEffect(() => {
@@ -47,11 +52,14 @@ export const WalletConnect = ({ onConnect, onDisconnect }) => {
       
       if (accounts.length > 0) {
         const network = await provider.getNetwork();
-        setAccount(accounts[0].address);
+        const signer = await provider.getSigner();
+        const address = await signer.getAddress();
+
+        setAccount(address);
         setChainId(network.chainId.toString());
         
         if (network.chainId.toString() === '11155111') {
-          onConnect?.(provider, accounts[0]);
+          onConnect?.(provider, signer);
         }
       }
     } catch (err) {
@@ -59,7 +67,7 @@ export const WalletConnect = ({ onConnect, onDisconnect }) => {
     }
   };
 
-  const handleAccountsChanged = (accounts) => {
+  const handleAccountsChanged = (accounts: Array<string>) => {
     if (accounts.length === 0) {
       setAccount(null);
       onDisconnect?.();
@@ -82,7 +90,7 @@ export const WalletConnect = ({ onConnect, onDisconnect }) => {
       return true;
     } catch (switchError) {
       // This error code indicates that the chain has not been added to MetaMask
-      if (switchError.code === 4902) {
+      if (switchError && typeof switchError === 'object' && 'code' in switchError && (switchError as { code?: number }).code === 4902) {
         try {
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
@@ -134,7 +142,8 @@ export const WalletConnect = ({ onConnect, onDisconnect }) => {
 
     } catch (err) {
       console.error('Connection error:', err);
-      setError(err.message);
+      const message = err instanceof Error ? err.message : 'Failed to connect wallet';
+      setError(message);
     } finally {
       setIsConnecting(false);
     }
@@ -146,7 +155,8 @@ export const WalletConnect = ({ onConnect, onDisconnect }) => {
     onDisconnect?.();
   };
 
-  const formatAddress = (address) => {
+  const formatAddress = (address: string) => {
+    if (!address) return '';
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 

@@ -559,27 +559,27 @@
 // export default GaslessSDKLanding;
 
 
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
+import type { BrowserProvider, Signer } from 'ethers';
 import { ContractEncoder } from 'gasless-relayer-sdk';
-import { Zap, Code, Rocket, Shield, CheckCircle, Copy, ExternalLink, Terminal, Book, PlayCircle } from 'lucide-react';
+import { Zap, Code, Rocket, Shield, CheckCircle, Copy, Terminal, Book, PlayCircle } from 'lucide-react';
 import { WalletConnect } from './components/WalletConnect';
 import { useGasless } from './hooks/UseGasLess';
 
 const GaslessSDKLanding = () => {
-  const [activeTab, setActiveTab] = useState('overview');
-  const [copiedCode, setCopiedCode] = useState(null);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [demoMessage, setDemoMessage] = useState('Hello Gasless World!');
   const [demoStatus, setDemoStatus] = useState('');
 
   const { initialize, disconnect, sendTransaction, isRelaying, txHash, error } = useGasless();
 
-  const copyToClipboard = useCallback((code, id) => {
+  const copyToClipboard = useCallback((code: string, id: string) => {
     navigator.clipboard.writeText(code);
     setCopiedCode(id);
     setTimeout(() => setCopiedCode(null), 2000);
   }, []);
 
-  const handleWalletConnect = useCallback((provider, signer) => {
+  const handleWalletConnect = useCallback((provider: BrowserProvider, signer: Signer) => {
     initialize(provider, signer);
     setDemoStatus('Wallet connected! Ready to send gasless transactions.');
   }, [initialize]);
@@ -643,31 +643,6 @@ const GaslessSDKLanding = () => {
     setDemoStatus(`Error: ${error || 'Failed to send transaction'}`);
   }
 };
-
-  const installCode = `npm install gasless-relayer-sdk ethers@^6.0.0`;
-
-  const quickStartCode = `import { GaslessSDK, ContractEncoder } from 'gasless-relayer-sdk';
-import { ethers } from 'ethers';
-
-// Initialize SDK
-const provider = new ethers.BrowserProvider(window.ethereum);
-const signer = await provider.getSigner();
-
-const sdk = new GaslessSDK(provider, {
-  relayerUrl: '${window.location.origin}/api',
-  forwarderAddress: '0xA7ab9c7f337574C8560f715085a53c62b275EfBf',
-  chainId: 11155111 // Sepolia
-});
-
-// Send gasless transaction
-const functionData = ContractEncoder.encodeSetMessage('Hello!');
-const result = await sdk.relay(
-  signer,
-  '0x4687Bd0255892f305267487C1aFD5ff5b41354a3',
-  functionData
-);
-
-console.log('Transaction:', result.txHash);`;
 
   const features = [
     {
