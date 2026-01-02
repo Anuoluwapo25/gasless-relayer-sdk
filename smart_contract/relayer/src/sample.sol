@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.22;
+pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/metatx/ERC2771Context.sol";
-
+import {ERC2771Context} from "@openzeppelin/contracts/metatx/ERC2771Context.sol";
 /**
  * @title SampleContract
  * @notice Example contract that accepts meta-transactions via MinimalForwarder

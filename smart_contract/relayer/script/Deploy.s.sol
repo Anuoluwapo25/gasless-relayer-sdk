@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.22;
+pragma solidity ^0.8.20;
 
-import "forge-std/Script.sol";
-import "../src/Forwarder.sol";
-import "../src/sample.sol";
+import {Script} from "forge-std/Script.sol"; 
+import {SampleContract} from "../src/sample.sol"; 
+import {TrustedForwarder} from "../src/Forwarder.sol";
+import {console} from "forge-std/console.sol";     // cleaner
 
 contract Deploy is Script {
     function run() external {
